@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Archivo:400,600" rel="stylesheet">
+<style type="text/css">
+    body{
+        font-weight: 400;
+        font-family: 'Archivo', sans-serif;
+    }
+    .master{
+        display: flex;
+        flex-wrap: wrap;
+        border-left: 1px solid #ddd;
+    }
+    .box{
+        flex: 1 1 13%;
+        padding: 5px 0px;
+        padding-bottom: 0px;
+        border: 1px solid #ddd;
+        border-left: none;
+        height: auto;
+        min-height: 150px;
+        max-width: 13%;
+        border-top: none;
+    }
+    .day{
+        flex: 1 1 13%;
+        padding: 5px 0px;
+        border: 1px solid #ddd;
+        border-left: none;
+        max-width: 13%;
+        font-size: 12px;
+        background: #ffffff;
+        background: -moz-linear-gradient(top, #ffffff 0%, #f1f1f1 50%, #e1e1e1 51%, #f6f6f6 100%); 
+        background: -webkit-linear-gradient(top, #ffffff 0%,#f1f1f1 50%,#e1e1e1 51%,#f6f6f6 100%);
+        background: linear-gradient(to bottom, #ffffff 0%,#f1f1f1 50%,#e1e1e1 51%,#f6f6f6 100%);
+    }
+    .box:hover{
+        background: whitesmoke;
+        cursor: pointer;
+    }
+    .box:hover > .addBTN {
+        visibility: visible;
+        transition: 0.2s ease-in-out;
+    }
+    .active{
+        background: #d8faff;
+        color: white;
+    }
+    .active:hover{
+        background: #c2e7ec;
+    }
+    .inactive{
+        background: whitesmoke;
+    }
+    .header{
+        padding: 50px 0px;
+    }
+    .subheader{
+        width: 50%;
+    }
+    .prev{
+        padding: 0px 10px;
+        float: left;
+        list-style: none;
+    }
+    .next{
+        padding: 0px 10px;
+        float: right;
+        list-style: none;
+    }
+    .close{
+        float: right;
+        cursor: pointer;
+        font-size: 22px;
+        margin-top: -15px;
+        margin-right: -10px;
+        opacity: 0.7;
+    }
+    .close:hover{
+        opacity: 1;
+    }
+</style>
+</head>
+<body>
+<div id="app">
+    <div class="header" align="center">
+        <div class="subheader">
+            {{getDay}} / {{getDate}} - {{getMonth}} - {{getYear}}
+            <!-- <li class="prev">&#10094;</li>
+            <li class="next">&#10095;</li> -->
+        </div>
+    </div>
+    <div class="overlay" v-show="show">
+        <div class="modal">
+        <span class="close" @click="cancel">&times;</span>   
+        <p> Add Event {{pickedDate}} / {{getMonth}} - {{getYear}} </p>
+        <label> Name </label>
+        <input v-model="sourceName" type="text" placeholder="">
+        <label> Time </label>
+        <input v-model="sourceTime" type="time" placeholder="">
+        <label> Email </label>
+        <input v-model="sourceEmail" type="email" placeholder="">
+        <button @click="save(pickedDate)" type="button">Save</button>
+        <button @click="dataDelete(pickedDate)" type="button" v-if="sourceEmail != '' && sourceTime != '' && sourceTime != ''">Delete</button>
+        <button @click="cancel" type="button">Cancel</button>
+        </div>
+    </div>
+    <div class="master" align="center">
+        <div class="day" v-for="(day, index) in days">{{day}}</div>
+        <div class="box inactive" v-for="(month, index) in firstDay"></div>
+        <div :class="{active : index + 1 == getDate}" class="box" v-for="(month, index) in loopDate">
+            <p>{{index + 1}}</p>
+            <div class="assigned" align="left" v-for="event in dataSave" v-if="event.id == index + 1" @click="edit(index + 1)">
+                <div class="respons">
+                    <div class="eventres ev1">{{event.name}}</div>
+                    <div class="eventres ev2">[{{event.time}}]</div>
+                    <div class="eventres ev3">{{event.email}}</div>
+                </div>
+            </div>
+            <button class="addBTN" type="button" @click="showModal(index + 1)">add event</button>
+        </div>
+        <div class="box inactive" v-for="(month, index) in lastDay"></div>
+    </div>
+</div>
+</body>
+<script>
+    new Vue({
+    el: '#app',
+      data: {
+        months: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'],
+        days: ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THRUSDAY', 'FRIDAY', 'SATURDAY'],
+        curDate: new Date(),
+        loopDate: null,
+        show: false,
+        pickedDate: null,
+        sourceEmail: '',
+        sourceTime: '',
+        sourceName: '',
+        dataSave: [],
+        editMode: false
+      },
+      methods: {
+        daysInMonth (month, year) {
+            return new Date(year, month, 0).getDate();
+        },
+        showModal (e) {
+            this.sourceTime = ''
+            this.sourceName = ''
+            this.sourceEmail = ''
+            this.pickedDate = e
+            this.show = true,
+            this.editMode = false
+        },
+        save (e) {
+            if (this.sourceTime != '' && this.sourceName != '' && this.sourceEmail != '') {
+                alert('saved')
+                this.show = false
+                let that = this
+                var indexParent = null
+                this.dataSave.forEach( x => {
+                    if(that.editMode == true) {
+                        console.log('edit')
+                        indexParent = this.dataSave.indexOf(x)
+                        console.log('ii', indexParent)
+                        this.dataSave.splice(indexParent, 1)
+                        this.dataSave.push({
+                            name: this.sourceName,
+                            time: this.sourceTime,
+                            email: this.sourceEmail,
+                            id: this.pickedDate
+                        })                       
+                    } else {
+                        this.dataSave.push({
+                            name: this.sourceName,
+                            time: this.sourceTime,
+                            email: this.sourceEmail,
+                            id: this.pickedDate
+                        })
+                    }
+                })
+            } else {
+                alert('plese fill all the form')
+            }
+            
+            localStorage.setItem("localData", JSON.stringify(this.dataSave));
+        },
+        dataDelete (e) {
+            let that = this
+            this.dataSave.forEach( x => {
+                if (x.id == e ) {
+                    let indexParent = that.dataSave.indexOf(x)
+                    that.dataSave.splice(indexParent, 1)
+                    this.sourceTime = ''
+                    this.sourceName = ''
+                    this.sourceEmail = ''
+                    this.pickedDate = e
+                    this.show = false
+                    alert('deleted')
+                } else {
+                    console.log('empty event')
+                }
+            })
+            localStorage.setItem("localData", JSON.stringify(this.dataSave));
+        },
+        edit (e) {
+            this.sourceTime = ''
+            this.sourceName = ''
+            this.sourceEmail = ''
+            this.pickedDate = e
+            this.show = true
+            this.editMode = true
+            this.dataSave.forEach(x => {
+                if (x.id == e) {
+                    this.sourceName = x.name
+                    this.sourceTime = x.time
+                    this.sourceEmail = x.email
+                    this.pickedDate = x.id
+                }
+            })
+        },
+        cancel () {
+            this.sourceTime = ''
+            this.sourceName = ''
+            this.sourceEmail = ''
+            this.pickedDate = null
+            this.show = false
+        }
+      },
+      computed: {
+        firstDay () {
+            var firstDay = new Date(this.curDate.getFullYear(), this.curDate.getMonth(), 1);
+            return firstDay.getDay()
+        },
+        lastDay () {
+            var lastDay = new Date(this.curDate.getFullYear(), this.curDate.getMonth() + 1, 0);
+            return 6 - lastDay.getDay() 
+        },
+        getDay () {
+            return this.days[this.curDate.getDay()]
+        },
+        getDate () {
+            let today = this.curDate.getDate()
+            return today
+        },
+        getMonth () {
+            let monthNow = this.curDate.getMonth()
+            let monthValue = ''
+            for(var i = 1; i < this.months.length; i++) {
+                if (i == monthNow) {
+                    monthValue = this.months[i]
+                }
+            }
+            return monthValue
+        },
+        getYear () {
+            let yearValue = this.curDate.getFullYear()
+            return yearValue
+        }
+      },
+      mounted: function () {
+        var n = this.curDate.getMonth() + 1;
+        var y = this.curDate.getYear();
+        this.loopDate = this.daysInMonth(n,y)
+        this.firstDay
+        this.dataSave = []
+        var someVarNames = localStorage.getItem("localData")
+        if (someVarNames == null) {
+            this.dataSave = []
+        } else {
+            this.dataSave = JSON.parse(someVarNames)
+        }
+      }
+    })
+</script>
+<style scoped>
+    .overlay{
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0; 
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 2;
+        cursor: pointer;
+    }
+    .modal {
+        padding: 20px;
+        border: 1px solid #777;
+        border-radius: 5px;
+        box-shadow: 3px 4px 10px #666;
+        width: 40%;
+        height: 45%;
+        margin:auto;
+        background: whitesmoke;
+         position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%,-50%);
+        -ms-transform: translate(-50%,-50%);
+    }
+    .modal p{
+        text-transform: capitalize;
+        text-align: center;
+        font-size: 16px;
+    }
+    input{
+        display: block;
+        padding: 8px;
+        font-size: 16px;
+        margin: 10px;
+        width: calc(100% - 36px);
+        border-radius: 2px;
+        border: 1px solid #ccc;
+    }
+    label{
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+    p{
+        text-transform: capitalize;
+        padding: 5px 10px;
+        text-align: right;
+        color: #444;
+        font-size: 12px;
+    }
+    button{
+        font-size: 12px;
+        width: 30%;
+        padding: 3px;
+        float: right;
+        margin-right: 10px;
+        margin-top: 10px;
+    }
+    .addBTN {
+        width: 100%;
+        margin: 0px;
+        vertical-align: bottom;
+        visibility: hidden;
+    }
+    .eventres{
+        font-size: 12px;
+    }
+    .assigned{
+        background: whitesmoke;
+        padding: 5px;
+        margin-bottom: 5px;
+    }
+    .assigned:nth-child(2) {
+        background: #b9f5fd;
+    }
+    .assigned:nth-child(3) {
+        background: #b9fdd2;
+    }
+    .assigned:nth-child(4) {
+        background: #fdf9b9;
+    }
+    .ev1{
+        font-size: 15px;
+    }
+    .ev2{
+        display: inline-block;
+    }
+    .ev3{
+        display: inline-block;
+    }
+    .respons{
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #444;
+    }
+</style>
+</html>
